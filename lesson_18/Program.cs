@@ -1,4 +1,0 @@
-using College_DB.Data; using College_DB.Models;
-var builder=WebApplication.CreateBuilder(args); var cs=builder.Configuration.GetConnectionString("DefaultConnection")!; var students=new StudentRepository(cs); var groups=new GroupRepository(cs); var app=builder.Build(); app.UseDefaultFiles(); app.UseStaticFiles();
-app.MapGet("/students/all",()=>Results.Ok(students.GetAllStudents())); app.MapGet("/groups/all",()=>Results.Ok(groups.GetAllGroups())); app.MapPost("/groups/add",(Group g)=> string.IsNullOrWhiteSpace(g.GroupName)?Results.BadRequest():Results.Ok(groups.CreateGroup(g.GroupName)));
-app.MapPost("/students/add",(Student s)=>Results.Ok(students.CreateStudent(s))); app.MapPut("/students/{id:int}",(int id,Student s)=>students.UpdateStudent(id,s)?Results.NoContent():Results.NotFound()); app.MapDelete("/students/{id:int}",(int id)=>students.DeleteStudent(id)?Results.NoContent():Results.NotFound()); app.Run();
