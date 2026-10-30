@@ -1,15 +1,12 @@
-# ADO.NET Course
+# CollegeApp — ADO.NET Course
 
-Уроки 01–23. Уроки 01–16 сохранены. 17–18: Dapper CRUD. 19–22: переход на EF Core, настройка моделей и CRUD. 23: дополнительные модели, связи и API.
+Откройте **ADO_NET_Course.sln** в Visual Studio: решение содержит один полный проект **CollegeApp**, основанный на последнем уроке.
 
-Для сборки уроков 17–23 нужен .NET 8 SDK и SQL Server для запуска. Инструкция в папке каждого урока. Скрипт database/CollegeDB.sql выполняется один раз для новой базы. Уроки являются отдельными приложениями с общей схемой базы данных.
+Модели: Student, Group, Teacher, Subject, Grade. API CRUD для всех пяти моделей, EF Core и SQL Server, клиент в wwwroot (css, js, lib).
 
-## Открытие в Visual Studio
+1. Установите компонент Visual Studio «ASP.NET и веб-разработка» и .NET 8 SDK.
+2. Для новой базы выполните CollegeApp/Database/CollegeDB.sql один раз.
+3. Настройте подключение в CollegeApp/appsettings.json.
+4. Запустите F5 — откроется браузер.
 
-1. Откройте ADO_NET_Course.sln в Visual Studio 2022 с компонентом «ASP.NET и веб-разработка» и .NET 8 SDK.
-2. В обозревателе решений выберите проект в папке lesson_23 → «Назначить запускаемым проектом» (или другой урок 17–22).
-3. В appsettings.json выбранного урока задайте подключение к SQL Server. По умолчанию используется LocalDB.
-4. Для новой базы выполните database/CollegeDB.sql один раз в SQL Server Object Explorer или SSMS.
-5. Нажмите F5 или Ctrl+F5. Браузер откроется автоматически.
-
-Уроки 01–16 оставлены в исходном виде и не включены в сборку решения.
+lesson_01–lesson_23 — отдельные учебные материалы, в решение приложения не входят.
