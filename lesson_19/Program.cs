@@ -1,64 +1,13 @@
-using College_DB.Data;
-using College_DB.Models;
-
-var builder = WebApplication.CreateBuilder(args);
-
-string conn_str =
-        "Data Source=COMP11A1\\SQLEXPRESS;" +
-        "Initial Catalog=College_DB;" +
-        "Integrated Security=True;" +
-        "TrustServerCertificate=True;";
-
-builder.Services.AddSingleton(new StudentRepository(conn_str));
-builder.Services.AddSingleton(new GroupRepository(conn_str));
-
-var app = builder.Build();
-
-app.UseHttpsRedirection();
-
-app.UseDefaultFiles();
-
-app.UseStaticFiles();
-
-app.MapGet("/students/all", (StudentRepository repo) =>
-    Results.Ok(repo.GetAllStudents()));
-
-app.MapGet("/groups/all", (GroupRepository repo) =>
-    Results.Ok(repo.GetAllGroups()));
-
-app.MapPost("/students/add", (Student student, StudentRepository repo) =>
-{
-    if (string.IsNullOrWhiteSpace(student.FirstName) ||
-        string.IsNullOrWhiteSpace(student.LastName) ||
-        student.Age < 1 || student.Age > 120 || student.GroupId < 1)
-        return Results.BadRequest("Проверьте данные студента.");
-
-    int id = repo.CreateStudent(student);
-    return Results.Ok(id);
-});
-
-//app.MapPut("/students/{id:int}", (int id, Student student, StudentRepository repo) =>
-//    repo.UpdateStudent(id, student) ? Results.Ok(id) : Results.NotFound());
-
-app.MapPut("/students/{id:int}", (int id, Student student) =>
-{
-    Console.WriteLine(id);
-    student.StudentId = id;
-    Console.WriteLine(student.StudentId);
-    repo.UpdateStudent(id, student);
-    return Results.NoContent();
-}
-
-app.MapDelete("/students/{id:int}", (int id, StudentRepository repo) =>
-    repo.DeleteStudent(id) ? Results.Ok() : Results.NotFound());
-
-app.MapPost("/groups/add", (Group group, GroupRepository repo) =>
-{
-    if (string.IsNullOrWhiteSpace(group.GroupName))
-        return Results.BadRequest("Введите название группы.");
-
-    int id = repo.CreateGroup(group.GroupName.Trim());
-    return Results.Ok(id);
-});
-
+using College_DB.Data; using College_DB.Models; using Microsoft.EntityFrameworkCore;
+var builder=WebApplication.CreateBuilder(args); builder.Services.AddDbContext<CollegeDbContext>(o=>o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); var app=builder.Build(); app.UseDefaultFiles(); app.UseStaticFiles();
+app.MapGet("/students/all", async (CollegeDbContext db)=>Results.Ok(await db.Students.AsNoTracking().ToListAsync()));
+app.MapGet("/students/{id:int}", async (int id, CollegeDbContext db)=> await db.Students.FindAsync(id) is {} value ? Results.Ok(value) : Results.NotFound());
+app.MapPost("/students/add", async (Student value, CollegeDbContext db)=>{ if (string.IsNullOrWhiteSpace(value.FirstName) || value.FirstName.Length>50 || string.IsNullOrWhiteSpace(value.LastName) || value.LastName.Length>50 || value.Age<1 || value.Age>120 || !await db.Groups.AnyAsync(x=>x.GroupId==value.GroupId)) return Results.BadRequest("Invalid data"); value.StudentId=0; db.Students.Add(value); await db.SaveChangesAsync(); return Results.Created($"/students/{value.StudentId}",value.StudentId); });
+app.MapPut("/students/{id:int}", async (int id, Student value, CollegeDbContext db)=>{ var existing=await db.Students.FindAsync(id); if(existing is null) return Results.NotFound(); if (string.IsNullOrWhiteSpace(value.FirstName) || value.FirstName.Length>50 || string.IsNullOrWhiteSpace(value.LastName) || value.LastName.Length>50 || value.Age<1 || value.Age>120 || !await db.Groups.AnyAsync(x=>x.GroupId==value.GroupId)) return Results.BadRequest("Invalid data"); value.StudentId=id; db.Entry(existing).CurrentValues.SetValues(value); await db.SaveChangesAsync(); return Results.NoContent(); });
+app.MapDelete("/students/{id:int}", async (int id, CollegeDbContext db)=>{ var value=await db.Students.FindAsync(id); if(value is null) return Results.NotFound(); db.Remove(value); try {await db.SaveChangesAsync();} catch(DbUpdateException) {return Results.Conflict("Record is referenced by other records");} return Results.NoContent(); });
+app.MapGet("/groups/all", async (CollegeDbContext db)=>Results.Ok(await db.Groups.AsNoTracking().ToListAsync()));
+app.MapGet("/groups/{id:int}", async (int id, CollegeDbContext db)=> await db.Groups.FindAsync(id) is {} value ? Results.Ok(value) : Results.NotFound());
+app.MapPost("/groups/add", async (Group value, CollegeDbContext db)=>{ if (string.IsNullOrWhiteSpace(value.GroupName) || value.GroupName.Length>20) return Results.BadRequest("Invalid data"); value.GroupId=0; db.Groups.Add(value); await db.SaveChangesAsync(); return Results.Created($"/groups/{value.GroupId}",value.GroupId); });
+app.MapPut("/groups/{id:int}", async (int id, Group value, CollegeDbContext db)=>{ var existing=await db.Groups.FindAsync(id); if(existing is null) return Results.NotFound(); if (string.IsNullOrWhiteSpace(value.GroupName) || value.GroupName.Length>20) return Results.BadRequest("Invalid data"); value.GroupId=id; db.Entry(existing).CurrentValues.SetValues(value); await db.SaveChangesAsync(); return Results.NoContent(); });
+app.MapDelete("/groups/{id:int}", async (int id, CollegeDbContext db)=>{ var value=await db.Groups.FindAsync(id); if(value is null) return Results.NotFound(); db.Remove(value); try {await db.SaveChangesAsync();} catch(DbUpdateException) {return Results.Conflict("Record is referenced by other records");} return Results.NoContent(); });
 app.Run();

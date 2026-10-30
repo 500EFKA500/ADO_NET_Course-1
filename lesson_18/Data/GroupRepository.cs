@@ -1,47 +1,42 @@
-﻿using College_DB.Models;
+using College_DB.Models;
 using Dapper;
 using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
 
 namespace College_DB.Data
 {
-    class GroupRepository
+    public class GroupRepository
     {
         private readonly string _conn_str;
-        public GroupRepository(string connection_string)
+
+        public GroupRepository(string connectionString)
         {
-            _conn_str = connection_string;
-        }
-        public List<Group> GetAllGroups()
-        {
-            var groups = new List<Group>();
-            var connection = new SqlConnection(_conn_str);
-            connection.Open();
-            string sql = "SELECT GroupId, GroupName FROM Groups";
-            var command = new SqlCommand(sql, connection);
-            var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                groups.Add(
-                    new Group
-                    {
-                        GroupId = reader.GetInt32(0),
-                        GroupName = reader.GetString(1)
-                    }
-                );
-            }
-            connection.Close();
-            return groups;
+            _conn_str = connectionString;
         }
 
-        public Group GetGroupById(string Id)
+        public List<Group> GetAllGroups()
+        {
+            using var connection = new SqlConnection(_conn_str);
+            return connection
+                .Query<Group>("SELECT GroupId, GroupName FROM Groups ORDER BY GroupId")
+                .ToList();
+        }
+
+        public int CreateGroup(string groupName)
+        {
+            using var connection = new SqlConnection(_conn_str);
+            return connection
+                .QuerySingle<int>("INSERT INTO Groups (GroupName) OUTPUT INSERTED.GroupId VALUES (@GroupName)",
+                new { GroupName = groupName });
+        }
+
+        public Group GetGroupById(string id)
         {
             using (var connection = new SqlConnection(_conn_str))
             {
-                return connection.QueryFirstOrDefault<Group>("SELECT g.GroupId, g.GroupName, s.FirstName, s.Lastname FROM Groups AS g, Students AS s WHERE g.GroupId = @id", new { @id = Id });
+                return connection
+                    .QueryFirstOrDefault<Group>("SELECT g.GroupId, g.GroupName, s.FirstName, s.LastName FROM Groups AS g, Students AS s WHERE g.GroupId = @id",
+                    new { @id = id });
             }
         }
     }
-
 }
